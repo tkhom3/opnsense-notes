@@ -1,6 +1,6 @@
 # opnsense-notes
 
-Firewall Logging via Influxdb
+## Firewall Logging via Influxdb
 
 
 from https://forum.opnsense.org/index.php?topic=40141.0
@@ -17,4 +17,41 @@ I do very minimal filter logging with my OPNsense implementation for home use bu
   name_override = "filterlog"
   data_format = "grok"
   grok_patterns=["<%{NONNEGINT}>%{NONNEGINT} %{TIMESTAMP_ISO8601:timestamp:ts} %{HOSTNAME} %{WORD} %{NONNEGINT} \\- \\[%{GREEDYDATA}\\] %{INT:rulenum},%{DATA},%{DATA},%{DATA:label:tag},%{DATA:interface:tag},%{DATA},%{DATA},%{DATA},%{INT},%{BASE16NUM},%{DATA},%{INT},%{INT},%{INT},%{DATA},%{INT},%{DATA:proto:tag},%{INT},%{IPV4:src:tag},%{IPV4:dst:tag},%{INT},%{INT:dst_port:tag}"]
+```
+
+## Fix telegraf script
+
+They removed the function freom interfaces .inc in this update for some reason. A quick hack fix is to copy the function from the 23.7 interfaces.inc file (https://github.com/opnsense/core/blob/stable/23.7/src/etc/inc/interfaces.inc)
+
+```
+function convert_seconds_to_hms($sec)
+{
+    $min = $hrs = 0;
+    if ($sec != 0) {
+        $min = floor($sec / 60);
+        $sec %= 60;
+    }
+    if ($min != 0) {
+        $hrs = floor($min / 60);
+        $min %= 60;
+    }
+    if ($sec < 10) {
+        $sec = "0" . $sec;
+    }
+    if ($min < 10) {
+        $min = "0" . $min;
+    }
+    if ($hrs < 10) {
+        $hrs = "0" . $hrs;
+    }
+    $result = $hrs . ":" . $min . ":" . $sec;
+    return $result;
+}
+```
+
+and paste it right below these lines.
+
+```
+require_once("plugins.inc.d/dpinger.inc");
+require_once("util.inc");
 ```
